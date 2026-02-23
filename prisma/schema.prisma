@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model PrayerRequest {
+  id          Int      @id @default(autoincrement())
+  groupId     String
+  userId      String
+  userName    String
+  message     String
+  category    String?
+  priority    String?  @default("normal")
+  amenCount   Int      @default(0)
+  isAnonymous Boolean  @default(false)
+  isAnswered  Boolean  @default(false)
+  answeredAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([groupId, isAnswered, createdAt])
+}
+
