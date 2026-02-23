@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "functions": {
+    "api/*.ts": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/weekly-reminder",
+      "schedule": "0 19 * * 2"
+    },
+    {
+      "path": "/api/weekly-assignments",
+      "schedule": "0 7 * * 1"
+    }
+  ]
+}

@@ -24,3 +24,13 @@ model PrayerRequest {
   @@index([groupId, isAnswered, createdAt])
 }
 
+model PrayerParticipant {
+  id        Int      @id @default(autoincrement())
+  groupId   String
+  userId    String
+  userName  String
+  createdAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+}
+

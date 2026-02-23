@@ -1,15 +1,9 @@
 import "dotenv/config";
 import http from "http";
 import { Telegraf } from "telegraf";
-import { registerAnsweredCommand } from "./commands/answered";
-import { registerAnonymousPrayCommand } from "./commands/prayAnon";
-import { registerPrayCommand } from "./commands/pray";
-import { registerPrayersCommand } from "./commands/prayers";
 import { prisma } from "./prisma/client";
 import { startWeeklyReminder } from "./scheduler";
-import { registerAddPrayerForCommand } from "./commands/addPrayerFor";
-import { registerMyPrayersCommand } from "./commands/myPrayers";
-import { registerAmenCommand } from "./commands/amen";
+import { registerCommands } from "./registerCommands";
 
 const botToken = process.env.BOT_TOKEN;
 const prayerGroupId = process.env.PRAYER_GROUP_ID;
@@ -28,13 +22,7 @@ if (!prayerGroupId) {
 const bot = new Telegraf(botToken);
 let httpServer: http.Server | null = null;
 
-registerPrayCommand(bot);
-registerAnonymousPrayCommand(bot, prayerGroupId);
-registerPrayersCommand(bot);
-registerAnsweredCommand(bot);
-registerAddPrayerForCommand(bot);
-registerMyPrayersCommand(bot);
-registerAmenCommand(bot);
+registerCommands(bot, prayerGroupId);
 startWeeklyReminder(bot, prayerGroupId);
 
 bot.catch((error, ctx) => {
