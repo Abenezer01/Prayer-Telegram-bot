@@ -1,5 +1,6 @@
 import { Telegraf } from "telegraf";
 import { sendWeeklyAssignments } from "../scheduler";
+import { replyAndDelete } from "./helpers";
 
 async function isGroupAdmin(bot: Telegraf, chatId: number | string, userId: number): Promise<boolean> {
   const member = await bot.telegram.getChatMember(chatId, userId);
@@ -10,7 +11,6 @@ export function registerAssignPrayersCommand(bot: Telegraf): void {
   bot.command("assignprayers", async (ctx) => {
     try {
       if (!ctx.chat || !ctx.from) {
-        await ctx.reply("This command must be used in a group.");
         return;
       }
 
@@ -22,17 +22,17 @@ export function registerAssignPrayersCommand(bot: Telegraf): void {
       const isAdmin = await isGroupAdmin(bot, ctx.chat.id, ctx.from.id);
 
       if (!isAdmin) {
-        await ctx.reply("Only group admins can assign weekly prayers.");
+        await replyAndDelete(ctx, "Only group admins can assign weekly prayers.", 10000);
         return;
       }
 
       const groupId = String(ctx.chat.id);
       await sendWeeklyAssignments(bot, groupId);
 
-      await ctx.reply("Prayer assignments have been sent to all registered participants.");
+      await replyAndDelete(ctx, "Prayer assignments have been sent to all registered participants.");
     } catch (error) {
       console.error("Failed to assign prayers:", error);
-      await ctx.reply("Something went wrong while assigning prayers.");
+      await replyAndDelete(ctx, "Something went wrong while assigning prayers.", 30000);
     }
   });
 }

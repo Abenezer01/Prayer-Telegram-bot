@@ -39,3 +39,27 @@ export function getDisplayName(ctx: Context): string {
   const fullName = [from.first_name, from.last_name].filter(Boolean).join(" ").trim();
   return fullName || "Unknown user";
 }
+
+export async function replyAndDelete(ctx: Context, text: string, delayMs: number = 60000): Promise<void> {
+  try {
+    const reply = await ctx.reply(text);
+
+    setTimeout(async () => {
+      try {
+        // Delete user's message
+        if (ctx.message?.message_id) {
+          await ctx.deleteMessage(ctx.message.message_id).catch(() => { });
+        }
+
+        // Delete bot's reply
+        if (reply?.message_id) {
+          await ctx.telegram.deleteMessage(ctx.chat?.id || "", reply.message_id).catch(() => { });
+        }
+      } catch (error) {
+        // Ignore errors if messages are already deleted or permissions are missing
+      }
+    }, delayMs);
+  } catch (error) {
+    console.error("Failed to send reply:", error);
+  }
+}

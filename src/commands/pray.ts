@@ -1,6 +1,6 @@
 import { Telegraf } from "telegraf";
 import { createPrayerRequest } from "../services/prayerService";
-import { extractCategoryFromMessage, extractCommandMessage, getDisplayName } from "./helpers";
+import { extractCategoryFromMessage, extractCommandMessage, getDisplayName, replyAndDelete } from "./helpers";
 
 export function registerPrayCommand(bot: Telegraf): void {
   bot.command("pray", async (ctx) => {
@@ -13,12 +13,12 @@ export function registerPrayCommand(bot: Telegraf): void {
       const message = extractCommandMessage(ctx.message && "text" in ctx.message ? ctx.message.text : undefined, "pray");
 
       if (!message) {
-        await ctx.reply("Usage: /pray <message>");
+        // Delete the invalid command message and the warning after 10 seconds (shorter delay for errors)
+        await replyAndDelete(ctx, "Usage: /pray <message>", 10000);
         return;
       }
 
       if (!ctx.chat || !ctx.from) {
-        await ctx.reply("Could not process this request.");
         return;
       }
 
@@ -34,10 +34,12 @@ export function registerPrayCommand(bot: Telegraf): void {
         priority: null
       });
 
-      await ctx.reply("🙏 Prayer request added.");
+      // Confirm and delete after 1 minute
+      await replyAndDelete(ctx, "🙏 Prayer request added.");
     } catch (error) {
       console.error("Failed to add prayer request:", error);
-      await ctx.reply("Something went wrong while saving the prayer request.");
+      // Even errors should disappear eventually to keep chat clean
+      await replyAndDelete(ctx, "Something went wrong while saving the prayer request.", 30000);
     }
   });
 }

@@ -1,5 +1,6 @@
-﻿import { Telegraf } from "telegraf";
+import { Telegraf } from "telegraf";
 import { markPrayerAnsweredByNumber } from "../services/prayerService";
+import { replyAndDelete } from "./helpers";
 
 function parseAnsweredNumber(text: string | undefined): number | null {
   if (!text) {
@@ -23,7 +24,6 @@ export function registerAnsweredCommand(bot: Telegraf): void {
   bot.command("answered", async (ctx) => {
     try {
       if (!ctx.chat || !ctx.from) {
-        await ctx.reply("This command must be used in a group.");
         return;
       }
 
@@ -34,7 +34,7 @@ export function registerAnsweredCommand(bot: Telegraf): void {
 
       const isAdmin = await isGroupAdmin(bot, ctx.chat.id, ctx.from.id);
       if (!isAdmin) {
-        await ctx.reply("Only group admins can mark prayers as answered.");
+        await replyAndDelete(ctx, "Only group admins can mark prayers as answered.", 10000);
         return;
       }
 
@@ -42,21 +42,21 @@ export function registerAnsweredCommand(bot: Telegraf): void {
       const number = parseAnsweredNumber(text);
 
       if (!number || number < 1) {
-        await ctx.reply("Usage: /answered <number>");
+        await replyAndDelete(ctx, "Usage: /answered <number>", 10000);
         return;
       }
 
       const updated = await markPrayerAnsweredByNumber(String(ctx.chat.id), number);
 
       if (!updated) {
-        await ctx.reply("Prayer request number not found.");
+        await replyAndDelete(ctx, "Prayer request number not found.", 10000);
         return;
       }
 
-      await ctx.reply("🎉 Praise God! Prayer marked as answered.");
+      await replyAndDelete(ctx, "🎉 Praise God! Prayer marked as answered.");
     } catch (error) {
       console.error("Failed to mark prayer answered:", error);
-      await ctx.reply("Something went wrong while updating prayer request.");
+      await replyAndDelete(ctx, "Something went wrong while updating prayer request.", 30000);
     }
   });
 }

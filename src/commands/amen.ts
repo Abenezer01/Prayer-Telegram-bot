@@ -1,5 +1,6 @@
 import { Telegraf } from "telegraf";
 import { addAmenByNumber } from "../services/prayerService";
+import { replyAndDelete } from "./helpers";
 
 function parseAmenNumber(text: string | undefined): number | null {
   if (!text) {
@@ -18,7 +19,6 @@ export function registerAmenCommand(bot: Telegraf): void {
   bot.command("amen", async (ctx) => {
     try {
       if (!ctx.chat) {
-        await ctx.reply("This command must be used in a group.");
         return;
       }
 
@@ -31,21 +31,23 @@ export function registerAmenCommand(bot: Telegraf): void {
       const number = parseAmenNumber(text);
 
       if (!number || number < 1) {
-        await ctx.reply("Usage: /amen <number>");
+        // Warning disappears after 10s
+        await replyAndDelete(ctx, "Usage: /amen <number>", 10000);
         return;
       }
 
       const updated = await addAmenByNumber(String(ctx.chat.id), number);
 
       if (!updated) {
-        await ctx.reply("Prayer request number not found.");
+        await replyAndDelete(ctx, "Prayer request number not found.", 10000);
         return;
       }
 
-      await ctx.reply("🙏 Recorded your amen for this request.");
+      // Success message disappears after 1 minute
+      await replyAndDelete(ctx, "🙏 Recorded your amen for this request.");
     } catch (error) {
       console.error("Failed to add amen to prayer request:", error);
-      await ctx.reply("Something went wrong while recording your amen.");
+      await replyAndDelete(ctx, "Something went wrong while recording your amen.", 30000);
     }
   });
 }

@@ -1,6 +1,6 @@
 import { Telegraf } from "telegraf";
 import { createPrayerRequest } from "../services/prayerService";
-import { extractCategoryFromMessage, extractCommandMessage } from "./helpers";
+import { extractCategoryFromMessage, extractCommandMessage, replyAndDelete } from "./helpers";
 
 async function isGroupAdmin(bot: Telegraf, chatId: number | string, userId: number): Promise<boolean> {
     const member = await bot.telegram.getChatMember(chatId, userId);
@@ -11,7 +11,6 @@ export function registerAddPrayerForCommand(bot: Telegraf): void {
     bot.command("addprayerfor", async (ctx) => {
         try {
             if (!ctx.chat || !ctx.from) {
-                await ctx.reply("This command must be used in a group.");
                 return;
             }
             if (ctx.chat.type === "private") {
@@ -20,18 +19,18 @@ export function registerAddPrayerForCommand(bot: Telegraf): void {
             }
             const isAdmin = await isGroupAdmin(bot, ctx.chat.id, ctx.from.id);
             if (!isAdmin) {
-                await ctx.reply("Only group admins can add prayers for members.");
+                await replyAndDelete(ctx, "Only group admins can add prayers for members.", 10000);
                 return;
             }
             const text = ctx.message && "text" in ctx.message ? ctx.message.text : undefined;
             const message = extractCommandMessage(text, "addprayerfor");
             if (!message) {
-                await ctx.reply("Usage: /addprayerfor <username> <prayer message>");
+                await replyAndDelete(ctx, "Usage: /addprayerfor <username> <prayer message>", 10000);
                 return;
             }
             const match = message.match(/^@(\w+)\s+([\s\S]+)/);
             if (!match) {
-                await ctx.reply("Usage: /addprayerfor <username> <prayer message>");
+                await replyAndDelete(ctx, "Usage: /addprayerfor @<username> <prayer message>", 10000);
                 return;
             }
             const username = match[1];
@@ -40,6 +39,7 @@ export function registerAddPrayerForCommand(bot: Telegraf): void {
             // Try to find userId by username in the group
             let userId = "unknown";
             try {
+                // This is not reliable for non-admins, but we do our best
                 const members = await bot.telegram.getChatAdministrators(ctx.chat.id);
                 const user = members.find((m) => m.user.username && m.user.username.toLowerCase() === username.toLowerCase());
                 if (user) {
@@ -55,10 +55,10 @@ export function registerAddPrayerForCommand(bot: Telegraf): void {
                 category,
                 priority: null
             });
-            await ctx.reply(`🙏 Prayer for @${username} added.`);
+            await replyAndDelete(ctx, `🙏 Prayer for @${username} added.`);
         } catch (error) {
             console.error("Failed to add prayer for user:", error);
-            await ctx.reply("Something went wrong while saving the prayer request.");
+            await replyAndDelete(ctx, "Something went wrong while saving the prayer request.", 30000);
         }
     });
 }

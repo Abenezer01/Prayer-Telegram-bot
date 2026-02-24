@@ -58,16 +58,27 @@ export async function sendWeeklyAssignments(bot: Telegraf, groupId: string): Pro
     return;
   }
 
+  // Shuffle prayers randomly (Fisher-Yates shuffle)
+  const shuffledPrayers = [...prayers];
+  for (let i = shuffledPrayers.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledPrayers[i], shuffledPrayers[j]] = [shuffledPrayers[j], shuffledPrayers[i]];
+  }
+
+  // Determine how many prayers per person (fixed at 3 as per user request)
+  const prayersPerPerson = 3;
+
   const assignmentsByUser: Record<string, typeof prayers> = {};
-  let index = 0;
+  let globalIndex = 0;
 
   for (const participant of participants) {
     const selected: typeof prayers = [];
 
-    for (let i = 0; i < 3; i++) {
-      const prayer = prayers[index % prayers.length];
+    for (let i = 0; i < prayersPerPerson; i++) {
+      // Use modulo to wrap around if we run out of unique prayers
+      const prayer = shuffledPrayers[globalIndex % shuffledPrayers.length];
       selected.push(prayer);
-      index++;
+      globalIndex++;
     }
 
     assignmentsByUser[participant.userId] = selected;
@@ -80,6 +91,10 @@ export async function sendWeeklyAssignments(bot: Telegraf, groupId: string): Pro
       continue;
     }
 
+    // Format the list specifically for this user
+    // We can't use the generic formatPrayerList because it might group differently or we want specific formatting
+    // But formatPrayerList is likely fine. Let's check if it needs the index or something.
+    // The previous code used formatPrayerList(assigned).
     const listText = formatPrayerList(assigned);
 
     const message = [
@@ -93,7 +108,7 @@ export async function sendWeeklyAssignments(bot: Telegraf, groupId: string): Pro
     try {
       await bot.telegram.sendMessage(participant.userId, message);
     } catch (error) {
-      console.error("Failed to send assignment message:", error);
+      console.error(`Failed to send assignment message to ${participant.userId}:`, error);
     }
   }
 }
