@@ -33,3 +33,13 @@ model PrayerParticipant {
 
   @@unique([groupId, userId])
 }
+
+model ScheduledTask {
+  id        Int      @id @default(autoincrement())
+  chatId    String
+  messageId Int
+  executeAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([executeAt])
+}

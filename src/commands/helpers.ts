@@ -1,4 +1,5 @@
 import { Context } from "telegraf";
+import { scheduleMessageDeletion } from "../services/taskService";
 
 export function extractCommandMessage(text: string | undefined, command: string): string {
   if (!text) {
@@ -44,21 +45,18 @@ export async function replyAndDelete(ctx: Context, text: string, delayMs: number
   try {
     const reply = await ctx.reply(text);
 
-    setTimeout(async () => {
-      try {
-        // Delete user's message
-        if (ctx.message?.message_id) {
-          await ctx.deleteMessage(ctx.message.message_id).catch(() => { });
-        }
-
-        // Delete bot's reply
-        if (reply?.message_id) {
-          await ctx.telegram.deleteMessage(ctx.chat?.id || "", reply.message_id).catch(() => { });
-        }
-      } catch (error) {
-        // Ignore errors if messages are already deleted or permissions are missing
-      }
-    }, delayMs);
+    // Schedule deletion in DB instead of setTimeout
+    if (ctx.message?.message_id && ctx.chat?.id) {
+      await scheduleMessageDeletion(String(ctx.chat.id), ctx.message.message_id, delayMs).catch(err => 
+        console.error("Failed to schedule user message deletion:", err)
+      );
+    }
+    
+    if (reply?.message_id && ctx.chat?.id) {
+      await scheduleMessageDeletion(String(ctx.chat.id), reply.message_id, delayMs).catch(err => 
+        console.error("Failed to schedule bot reply deletion:", err)
+      );
+    }
   } catch (error) {
     console.error("Failed to send reply:", error);
   }

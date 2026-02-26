@@ -4,6 +4,7 @@ import { Telegraf } from "telegraf";
 import { prisma } from "./prisma/client";
 import { startWeeklyReminder } from "./scheduler";
 import { registerCommands } from "./registerCommands";
+import { processScheduledTasks } from "./services/taskService";
 
 const botToken = process.env.BOT_TOKEN;
 const prayerGroupId = process.env.PRAYER_GROUP_ID;
@@ -24,6 +25,11 @@ let httpServer: http.Server | null = null;
 
 registerCommands(bot, prayerGroupId);
 startWeeklyReminder(bot, prayerGroupId);
+
+// Process tasks every 30 seconds in polling mode
+setInterval(() => {
+  processScheduledTasks(bot).catch(err => console.error("Task processing error:", err));
+}, 30000);
 
 bot.catch((error, ctx) => {
   console.error("Unhandled bot error:", error, { update: ctx.update });
